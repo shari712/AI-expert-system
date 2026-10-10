@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book a Driver - ParkEasy</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('user_dashboard') }}">
+                <i class="fas fa-car"></i> ParkEasy
+            </a>
+            <div class="navbar-nav ms-auto align-items-center">
+                <a class="nav-link" href="{{ url_for('user_dashboard') }}">
+                    <i class="fas fa-parking"></i> Parking
+                </a>
+                <a class="nav-link active" href="{{ url_for('user_drivers') }}">
+                    <i class="fas fa-user-tie"></i> Book Driver
+                </a>
+                <a class="nav-link" href="{{ url_for('user_history') }}">
+                    <i class="fas fa-history"></i> History
+                </a>
+                <span class="navbar-text ms-3 me-3 text-white-50">Welcome, <strong>{{ session.username }}</strong></span>
+                <a class="btn btn-outline-light btn-sm" href="{{ url_for('logout') }}">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4 mb-5">
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-info alert-dismissible fade show shadow-sm" role="alert">
+                        <i class="fas fa-info-circle me-2"></i>{{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Hero Header -->
+        <div class="p-4 p-md-5 mb-4 rounded-3 text-white bg-primary bg-gradient shadow">
+            <div class="col-md-9 px-0">
+                <h1 class="display-6 fw-bold"><i class="fas fa-id-card-alt me-2"></i>Professional Drivers On Demand</h1>
+                <p class="lead my-3">
+                    Verified, background-checked professional drivers ready for valet assistance, daily commutes, or outstation rides. Book instantly with transparent hourly rates.
+                </p>
+                <div class="d-flex align-items-center gap-3">
+                    <span class="badge bg-light text-dark fs-6 py-2 px-3">
+                        <i class="fas fa-check-circle text-success me-1"></i> {{ available_count }} Available Now
+                    </span>
+                    <button class="btn btn-warning fw-bold" data-bs-toggle="modal" data-bs-target="#quickBookModal">
+                        <i class="fas fa-bolt me-1"></i> Quick Book Any Driver
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Available Drivers Grid -->
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4 class="mb-0 text-dark fw-bold"><i class="fas fa-users text-primary me-2"></i>Our Professional Drivers</h4>
+            <span class="text-muted small">Showing {{ drivers|length }} verified chauffeurs</span>
+        </div>
+
+        {% if drivers %}
+            <div class="row g-4">
+                {% for driver in drivers %}
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card h-100 shadow-sm border-0 position-relative">
+                            {% if driver.status == 'available' %}
+                                <span class="position-absolute top-0 end-0 m-3 badge bg-success shadow-sm">
+                                    <i class="fas fa-circle me-1" style="font-size: 8px;"></i> Available
+                                </span>
+                            {% else %}
+                                <span class="position-absolute top-0 end-0 m-3 badge bg-secondary">
+                                    <i class="fas fa-clock me-1"></i> On Duty
+                                </span>
+                            {% endif %}
+
+                            <div class="card-body p-4 text-center">
+                                <div class="mb-3">
+                                    <div class="d-inline-flex align-items-center justify-content-center bg-primary bg-opacity-10 text-primary rounded-circle" style="width: 80px; height: 80px;">
+                                        <i class="fas fa-user-tie fa-3x"></i>
+                                    </div>
+                                </div>
+                                
+                                <h5 class="card-title fw-bold mb-1">{{ driver.name }}</h5>
+                                <p class="text-warning mb-2">
+                                    {% for i in range(5) %}
+                                        {% if i < driver.rating|round(0, 'floor')|int %}
+                                            <i class="fas fa-star"></i>
+                                        {% else %}
+                                            <i class="far fa-star"></i>
+                                        {% endif %}
+                                    {% endfor %}
+                                    <span class="text-dark fw-bold ms-1">({{ driver.rating }})</span>
+                                </p>
+
+                                <div class="bg-light rounded p-2 mb-3 small text-muted">
+                                    <div class="row">
+                                        <div class="col-6 border-end">
+                                            <strong>{{ driver.experience_years }} yrs</strong><br>Experience
+                                        </div>
+                                        <div class="col-6">
+                                            <strong>{{ driver.total_trips or 0 }}</strong><br>Trips Done
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <span class="text-muted small"><i class="fas fa-shield-alt text-success me-1"></i>DL: {{ driver.license_number[:4] }}...</span>
+                                    <span class="fs-5 fw-bold text-primary">₹{{ "%.0f"|format(driver.hourly_rate) }}<small class="text-muted fs-6">/hr</small></span>
+                                </div>
+
+                                {% if driver.status == 'available' %}
+                                    <button class="btn btn-primary w-100 fw-bold shadow-sm"
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#bookDriverModal{{ driver.id }}">
+                                        <i class="fas fa-calendar-check me-1"></i> Book This Driver
+                                    </button>
+                                {% else %}
+                                    <button class="btn btn-secondary w-100 disabled" disabled>
+                                        Currently Busy
+                                    </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Modal for Specific Driver Booking -->
+                    <div class="modal fade" id="bookDriverModal{{ driver.id }}" tabindex="-1">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <form method="POST" action="{{ url_for('user_book_driver') }}">
+                                    <input type="hidden" name="driver_id" value="{{ driver.id }}">
+                                    <div class="modal-header bg-primary text-white">
+                                        <h5 class="modal-title">
+                                            <i class="fas fa-user-check me-2"></i>Book Driver: {{ driver.name }}
+                                        </h5>
+                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body p-4">
+                                        <div class="alert alert-light border d-flex align-items-center mb-3">
+                                            <i class="fas fa-info-circle text-primary fa-2x me-3"></i>
+                                            <div>
+                                                <strong>Rate:</strong> ₹{{ "%.0f"|format(driver.hourly_rate) }}/hour &bull;
+                                                <strong>Rating:</strong> ★ {{ driver.rating }} ({{ driver.experience_years }} yrs exp)
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label class="form-label fw-bold">Service Type *</label>
+                                            <select class="form-select" name="booking_type" required>
+                                                <option value="personal">Personal Ride / City Driving</option>
+                                                <option value="valet">Valet Parking & Car Retrieval</option>
+                                            </select>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label class="form-label fw-bold">Pickup Location / Address *</label>
+                                            <input type="text" class="form-control" name="pickup_location" 
+                                                   placeholder="e.g., Connaught Place Gate 3 or Mall Entrance" required>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label class="form-label fw-bold">Destination / Route (Optional)</label>
+                                            <input type="text" class="form-control" name="destination_location" 
+                                                   placeholder="e.g., Gurgaon Cyber City or Round Trip">
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label class="form-label fw-bold">Vehicle Details (Make / Model / Plate)</label>
+                                            <input type="text" class="form-control" name="vehicle_details" 
+                                                   placeholder="e.g., Hyundai Creta - DL 03 AX 1234">
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label class="form-label fw-bold">Special Instructions</label>
+                                            <textarea class="form-control" name="notes" rows="2" 
+                                                      placeholder="Any specific instructions (e.g., Automatic transmission, meet at valet booth)"></textarea>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                        <button type="submit" class="btn btn-primary fw-bold">
+                                            <i class="fas fa-check-circle me-1"></i> Confirm Booking
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="text-center py-5 bg-white rounded shadow-sm">
+                <i class="fas fa-user-slash fa-4x text-muted mb-3"></i>
+                <h4 class="text-muted">No Drivers Available</h4>
+                <p class="text-muted">All our drivers are currently on duty. Please check back shortly.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Quick Book Any Available Driver Modal -->
+    <div class="modal fade" id="quickBookModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form method="POST" action="{{ url_for('user_book_driver') }}">
+                    <input type="hidden" name="driver_id" value="auto">
+                    <div class="modal-header bg-warning text-dark">
+                        <h5 class="modal-title fw-bold">
+                            <i class="fas fa-bolt me-2"></i>Quick Book Best Available Driver
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body p-4">
+                        <p class="text-muted small">
+                            We will automatically assign the highest-rated driver available immediately.
+                        </p>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Service Type *</label>
+                            <select class="form-select" name="booking_type" required>
+                                <option value="personal">Personal Ride / City Driving</option>
+                                <option value="valet">Valet Parking & Car Retrieval</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Pickup Location / Address *</label>
+                            <input type="text" class="form-control" name="pickup_location" 
+                                   placeholder="e.g., Airport Terminal 3, Gate 4" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Destination / Route (Optional)</label>
+                            <input type="text" class="form-control" name="destination_location" 
+                                   placeholder="e.g., Hotel Taj Palace">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Vehicle Details</label>
+                            <input type="text" class="form-control" name="vehicle_details" 
+                                   placeholder="e.g., Honda City - DL 01 AB 9999">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Special Instructions</label>
+                            <textarea class="form-control" name="notes" rows="2" 
+                                      placeholder="Any instructions for the driver"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-warning fw-bold">
+                            <i class="fas fa-check-circle me-1"></i> Book Driver Now
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

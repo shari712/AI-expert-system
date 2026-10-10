@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Drivers - Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+        <div class="container-fluid px-4">
+            <a class="navbar-brand" href="{{ url_for('admin_dashboard') }}">
+                <i class="fas fa-car"></i> ParkEasy Admin
+            </a>
+            <div class="navbar-nav ms-auto align-items-center">
+                <span class="navbar-text me-3 text-white-50">Welcome, <strong>{{ session.username }}</strong>!</span>
+                <a class="btn btn-outline-light btn-sm" href="{{ url_for('logout') }}">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid px-4 mt-4 mb-5">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3 col-lg-2 mb-4">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-primary text-white py-3">
+                        <h6 class="mb-0 fw-bold"><i class="fas fa-tachometer-alt me-2"></i>Admin Panel</h6>
+                    </div>
+                    <div class="list-group list-group-flush">
+                        <a href="{{ url_for('admin_dashboard') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-home me-2"></i> Dashboard
+                        </a>
+                        <a href="{{ url_for('admin_parking_lots') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-parking me-2"></i> Parking Lots
+                        </a>
+                        <a href="{{ url_for('admin_create_lot') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-plus-circle me-2"></i> Create Lot
+                        </a>
+                        <a href="{{ url_for('admin_drivers') }}" class="list-group-item list-group-item-action active fw-bold">
+                            <i class="fas fa-user-tie me-2 text-warning"></i> Drivers
+                        </a>
+                        <a href="{{ url_for('admin_driver_bookings') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-clipboard-list me-2 text-info"></i> Driver Bookings
+                        </a>
+                        <a href="{{ url_for('admin_users') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-users me-2"></i> Users
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content Area -->
+            <div class="col-md-9 col-lg-10">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h2 class="mb-1 text-dark fw-bold"><i class="fas fa-user-tie text-primary me-2"></i>Driver Fleet Management</h2>
+                        <p class="text-muted small mb-0">Register, inspect, and manage verified chauffeurs & valet drivers</p>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <a href="{{ url_for('admin_driver_bookings') }}" class="btn btn-outline-primary btn-sm fw-bold">
+                            <i class="fas fa-history me-1"></i> Booking Logs
+                        </a>
+                        <a href="{{ url_for('admin_add_driver') }}" class="btn btn-primary btn-sm fw-bold shadow-sm">
+                            <i class="fas fa-user-plus me-1"></i> Register New Driver
+                        </a>
+                    </div>
+                </div>
+
+                {% with messages = get_flashed_messages() %}
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-info alert-dismissible fade show shadow-sm" role="alert">
+                                <i class="fas fa-info-circle me-2"></i>{{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <!-- Metrics Cards -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <div class="card border-0 bg-primary text-white shadow-sm p-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h4 class="fw-bold mb-0">{{ total_drivers }}</h4>
+                                    <small class="text-white-50">Total Registered Drivers</small>
+                                </div>
+                                <i class="fas fa-users fa-2x opacity-75"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card border-0 bg-success text-white shadow-sm p-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h4 class="fw-bold mb-0">{{ available_drivers }}</h4>
+                                    <small class="text-white-50">Currently Available</small>
+                                </div>
+                                <i class="fas fa-check-circle fa-2x opacity-75"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card border-0 bg-warning text-white shadow-sm p-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h4 class="fw-bold mb-0">{{ busy_drivers }}</h4>
+                                    <small class="text-white-50">Currently On Duty (Busy)</small>
+                                </div>
+                                <i class="fas fa-car fa-2x opacity-75"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Drivers Table -->
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white border-bottom py-3">
+                        <h6 class="mb-0 fw-bold text-dark"><i class="fas fa-list me-2 text-primary"></i>All Fleet Drivers</h6>
+                    </div>
+                    <div class="card-body p-0">
+                        {% if drivers %}
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Driver Details</th>
+                                            <th>License & Experience</th>
+                                            <th>Hourly Rate</th>
+                                            <th>Rating</th>
+                                            <th>Trips & Revenue</th>
+                                            <th>Status</th>
+                                            <th class="text-end">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for d in drivers %}
+                                            <tr>
+                                                <td>
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="bg-primary bg-opacity-10 text-primary rounded-circle p-2 me-2">
+                                                            <i class="fas fa-user-tie"></i>
+                                                        </div>
+                                                        <div>
+                                                            <strong class="text-dark">{{ d.name }}</strong>
+                                                            <div class="small text-muted">
+                                                                <i class="fas fa-phone-alt" style="font-size: 10px;"></i> {{ d.phone }}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <small class="d-block fw-bold text-dark">{{ d.license_number }}</small>
+                                                    <small class="text-muted">{{ d.experience_years }} years exp</small>
+                                                </td>
+                                                <td>
+                                                    <span class="badge bg-primary">₹{{ "%.0f"|format(d.hourly_rate) }}/hr</span>
+                                                </td>
+                                                <td>
+                                                    <span class="badge bg-warning text-dark">
+                                                        ★ {{ d.rating }}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <small class="d-block fw-bold">{{ d.completed_trips or 0 }} trips</small>
+                                                    <small class="text-success">₹{{ "%.2f"|format(d.total_revenue or 0) }}</small>
+                                                </td>
+                                                <td>
+                                                    {% if d.status == 'available' %}
+                                                        <span class="badge bg-success">Available</span>
+                                                    {% elif d.status == 'busy' %}
+                                                        <span class="badge bg-warning text-dark">
+                                                            On Duty {% if d.active_user %}(@{{ d.active_user }}){% endif %}
+                                                        </span>
+                                                    {% else %}
+                                                        <span class="badge bg-secondary">Inactive</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td class="text-end">
+                                                    <div class="btn-group btn-group-sm">
+                                                        <a href="{{ url_for('admin_edit_driver', driver_id=d.id) }}" class="btn btn-outline-primary">
+                                                            <i class="fas fa-edit"></i>
+                                                        </a>
+                                                        {% if d.status != 'busy' %}
+                                                            <a href="{{ url_for('admin_delete_driver', driver_id=d.id) }}" class="btn btn-outline-danger"
+                                                               onclick="return confirm('Are you sure you want to delete driver {{ d.name }}?')">
+                                                                <i class="fas fa-trash"></i>
+                                                            </a>
+                                                        {% else %}
+                                                            <button class="btn btn-outline-secondary disabled" title="Cannot delete driver on duty" disabled>
+                                                                <i class="fas fa-trash"></i>
+                                                            </button>
+                                                        {% endif %}
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <div class="text-center py-5">
+                                <i class="fas fa-user-slash fa-3x text-muted mb-3"></i>
+                                <h5 class="text-muted">No Drivers Found</h5>
+                                <p class="text-muted">Register your first driver to offer valet and driving services.</p>
+                                <a href="{{ url_for('admin_add_driver') }}" class="btn btn-primary btn-sm">Add Driver</a>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

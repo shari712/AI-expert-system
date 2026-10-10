@@ -9,86 +9,102 @@
     <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-        <div class="container">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+        <div class="container-fluid px-4">
             <a class="navbar-brand" href="{{ url_for('admin_dashboard') }}">
                 <i class="fas fa-car"></i> ParkEasy Admin
             </a>
-            <div class="navbar-nav ms-auto">
-                <span class="navbar-text me-3">Welcome, {{ session.username }}!</span>
-                <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
+            <div class="navbar-nav ms-auto align-items-center">
+                <span class="navbar-text me-3 text-white-50">Welcome, <strong>{{ session.username }}</strong>!</span>
+                <a class="btn btn-outline-light btn-sm" href="{{ url_for('logout') }}">Logout</a>
             </div>
         </div>
     </nav>
 
-    <div class="container-fluid mt-4">
+    <div class="container-fluid px-4 mt-4 mb-5">
         <div class="row">
-            <div class="col-md-3">
-                <div class="card">
-                    <div class="card-header">
-                        <h5><i class="fas fa-tachometer-alt"></i> Admin Menu</h5>
+            <!-- Sidebar -->
+            <div class="col-md-3 col-lg-2 mb-4">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-primary text-white py-3">
+                        <h6 class="mb-0 fw-bold"><i class="fas fa-tachometer-alt me-2"></i>Admin Panel</h6>
                     </div>
                     <div class="list-group list-group-flush">
                         <a href="{{ url_for('admin_dashboard') }}" class="list-group-item list-group-item-action">
-                            <i class="fas fa-home"></i> Dashboard
+                            <i class="fas fa-home me-2"></i> Dashboard
                         </a>
                         <a href="{{ url_for('admin_parking_lots') }}" class="list-group-item list-group-item-action">
-                            <i class="fas fa-parking"></i> Parking Lots
+                            <i class="fas fa-parking me-2"></i> Parking Lots
                         </a>
                         <a href="{{ url_for('admin_create_lot') }}" class="list-group-item list-group-item-action">
-                            <i class="fas fa-plus"></i> Create Lot
+                            <i class="fas fa-plus-circle me-2"></i> Create Lot
                         </a>
-                        <a href="{{ url_for('admin_users') }}" class="list-group-item list-group-item-action active">
-                            <i class="fas fa-users"></i> Users
+                        <a href="{{ url_for('admin_drivers') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-user-tie me-2 text-warning"></i> Drivers
+                        </a>
+                        <a href="{{ url_for('admin_driver_bookings') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-clipboard-list me-2 text-info"></i> Driver Bookings
+                        </a>
+                        <a href="{{ url_for('admin_users') }}" class="list-group-item list-group-item-action active fw-bold">
+                            <i class="fas fa-users me-2"></i> Users
                         </a>
                     </div>
                 </div>
             </div>
 
-            <div class="col-md-9">
-                <h2><i class="fas fa-users"></i> Registered Users</h2>
+            <!-- Main Content Area -->
+            <div class="col-md-9 col-lg-10">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2 class="mb-0 text-dark fw-bold"><i class="fas fa-users text-primary me-2"></i>Registered Users</h2>
+                    <span class="badge bg-primary fs-6">{{ users|length }} Users</span>
+                </div>
 
                 {% if users %}
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>Username</th>
-                                    <th>Full Name</th>
-                                    <th>Email</th>
-                                    <th>Phone</th>
-                                    <th>Total Reservations</th>
-                                    <th>Joined Date</th>
-                                    <th>Total Spend</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for user in users %}
-                                    <tr>
-                                        <td>
-                                            <strong>{{ user.username }}</strong>
-                                        </td>
-                                        <td>{{ user.full_name or '-' }}</td>
-                                        <td>{{ user.email or '-' }}</td>
-                                        <td>{{ user.phone or '-' }}</td>
-                                        <td>
-                                            <span class="badge bg-info">{{ user.total_reservations }}</span>
-                                        </td>
-                                        
-                                        <td>
-                                            <small class="text-muted">{{ user.registered_at }}</small>
-                                        </td>
-                                        <td>
-                                        <span class="badge bg-info">{{ "%.2f"|format(user.total_spend or 0) }}</span>
-                                        </td>
-
-                                    </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>User Details</th>
+                                            <th>Email</th>
+                                            <th>Phone</th>
+                                            <th>Parking Bookings</th>
+                                            <th>Driver Trips</th>
+                                            <th>Joined Date</th>
+                                            <th>Total Spend</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for user in users %}
+                                            <tr>
+                                                <td>
+                                                    <strong>{{ user.username }}</strong>
+                                                    <div class="small text-muted">{{ user.full_name or '-' }}</div>
+                                                </td>
+                                                <td>{{ user.email or '-' }}</td>
+                                                <td>{{ user.phone or '-' }}</td>
+                                                <td>
+                                                    <span class="badge bg-primary">{{ user.total_reservations }}</span>
+                                                </td>
+                                                <td>
+                                                    <span class="badge bg-warning text-dark">{{ user.total_driver_trips or 0 }}</span>
+                                                </td>
+                                                <td>
+                                                    <small class="text-muted">{{ user.registered_at }}</small>
+                                                </td>
+                                                <td>
+                                                    <span class="badge bg-success fs-6">₹{{ "%.2f"|format(user.total_spend or 0) }}</span>
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
                     </div>
                 {% else %}
-                    <div class="text-center py-5">
+                    <div class="text-center py-5 bg-white rounded shadow-sm">
                         <i class="fas fa-users fa-4x text-muted mb-3"></i>
                         <h4 class="text-muted">No Users Registered</h4>
                         <p class="text-muted">No users have registered yet.</p>
