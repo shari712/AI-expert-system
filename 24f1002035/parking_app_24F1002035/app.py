@@ -1,19 +1,38 @@
 import os
 import sqlite3
 import hashlib
+import shutil
 from datetime import datetime
 from flask import Flask, render_template, request, redirect, url_for, session, flash # type: ignore
 from flask_session import Session # type: ignore
 from models.init_db import init_db
 
-app = Flask(__name__)
+current_dir = os.path.dirname(os.path.abspath(__file__))
+template_dir = os.path.join(current_dir, 'templates')
+static_dir = os.path.join(current_dir, 'static')
+
+app = Flask(__name__, template_folder=template_dir, static_folder=static_dir)
 
 app.secret_key = 'parkeasy-secure-session-secret-key'
 app.config["SESSION_PERMANENT"] = False
-app.config["SESSION_TYPE"] = "filesystem"
-Session(app)
 
-DATABASE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'parking.db')
+is_serverless = os.environ.get('VERCEL') == '1' or os.environ.get('AWS_LAMBDA_FUNCTION_NAME') is not None or not os.access(current_dir, os.W_OK)
+
+if is_serverless:
+    session_dir = '/tmp/flask_session'
+    os.makedirs(session_dir, exist_ok=True)
+    app.config["SESSION_TYPE"] = "filesystem"
+    app.config["SESSION_FILE_DIR"] = session_dir
+    
+    DATABASE = '/tmp/parking.db'
+    orig_db = os.path.join(current_dir, 'parking.db')
+    if not os.path.exists(DATABASE) and os.path.exists(orig_db):
+        shutil.copy2(orig_db, DATABASE)
+else:
+    app.config["SESSION_TYPE"] = "filesystem"
+    DATABASE = os.path.join(current_dir, 'parking.db')
+
+Session(app)
 
 # Ensure tables and initial data are ready
 init_db(DATABASE)
